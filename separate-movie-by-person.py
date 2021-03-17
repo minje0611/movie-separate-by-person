@@ -24,7 +24,7 @@ flags.DEFINE_boolean('tiny', False, 'yolo or yolo-tiny')
 flags.DEFINE_string('model', 'yolov4', 'yolov3 or yolov4')
 flags.DEFINE_string('video', './data/test.avi', 'path to input video')
 flags.DEFINE_float('iou', 0.45, 'iou threshold')
-flags.DEFINE_float('score', 0.70, 'score threshold')
+flags.DEFINE_float('score', 0.85, 'score threshold')
 
 
 def main(_argv):
@@ -102,11 +102,40 @@ def main(_argv):
         
     cap.release()
 
+
+def person_check(frame, pos_frames, person_count, out, point, start, frame_count):
+    if person_count > 3:
+        person_count = 4
+
+    if point == 0:
+        out, start = make_new_video(frame, pos_frames, person_count, out)
+        frame_count += 1
+        point += 1
+    elif point < frame_threshold:
+        if start != person_count:
+            point += 1
+        out.write(frame)
+        frame_count += 1
+    else:
+        point = 0
+        frame_count = 0
+        out.release()
+
+    return frame, pos_frames, person_count, out, point, start, frame_count
+
 def check_frame(frame, pos_frames, person_count, point, frame_count, out, start):
 
     frame = np.asarray(frame)
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
+    if person_count < 2:
+        if frame_count > 0:
+            out.write(frame)
+            point += 1
+    else:
+        frame, pos_frames, person_count, out, point, start, frame_count = person_check(frame, pos_frames, person_count, out, point, start, frame_count)
+
+    '''
     if person_count < 2:
         if frame_count > 0:
             out.write(frame)
@@ -156,7 +185,7 @@ def check_frame(frame, pos_frames, person_count, point, frame_count, out, start)
             point = 0
             frame_count = 0
             out.release()
-        
+    ''' 
     print("out =", out)
     print("point =", point)
     print("person count = ", person_count)           
