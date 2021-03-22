@@ -22,9 +22,9 @@ flags.DEFINE_string('weights', './checkpoints/yolov4-416',
 flags.DEFINE_integer('size', 416, 'resize images to')
 flags.DEFINE_boolean('tiny', False, 'yolo or yolo-tiny')
 flags.DEFINE_string('model', 'yolov4', 'yolov3 or yolov4')
-flags.DEFINE_string('video', './data/test.avi', 'path to input video')
-flags.DEFINE_float('iou', 0.45, 'iou threshold')
-flags.DEFINE_float('score', 0.85, 'score threshold')
+flags.DEFINE_string('video', './data/Collectors.mp4', 'path to input video')
+flags.DEFINE_float('iou', 0.7, 'iou threshold')
+flags.DEFINE_float('score', 0.90, 'score threshold')
 
 
 def main(_argv):
@@ -55,7 +55,7 @@ def main(_argv):
     saved_model_loaded = tf.saved_model.load(FLAGS.weights, tags=[tag_constants.SERVING])
     infer = saved_model_loaded.signatures['serving_default']
     global frame_threshold
-    frame_threshold = 50
+    frame_threshold = 60
 
     while True:
         return_value, frame = cap.read()
@@ -88,16 +88,17 @@ def main(_argv):
             score_threshold=FLAGS.score
         )
         
-
+        print(pos_frames)
         pred_bbox = [boxes.numpy(), scores.numpy(), classes.numpy(), valid_detections.numpy()]
         print(pos_frames)
         #print(valid_detections.numpy())
         point, frame_count, out, start = check_frame(frame, pos_frames, valid_detections.numpy()[0], point, frame_count, out, start)
-
+        '''
         image = utils.draw_bbox(frame, pred_bbox)
 
         result = np.asarray(image)
         result = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        '''
         #out.write(result)
         
     cap.release()
@@ -135,60 +136,6 @@ def check_frame(frame, pos_frames, person_count, point, frame_count, out, start)
     else:
         frame, pos_frames, person_count, out, point, start, frame_count = person_check(frame, pos_frames, person_count, out, point, start, frame_count)
 
-    '''
-    if person_count < 2:
-        if frame_count > 0:
-            out.write(frame)
-            point += 1
-
-    elif person_count == 2:
-        if point == 0:
-            out, start = make_new_video(frame, pos_frames, person_count, out)
-            frame_count += 1
-            point += 1
-        elif point < frame_threshold:
-            if start != person_count:
-                point += 1
-            out.write(frame)
-            frame_count += 1
-        else:
-            point = 0
-            frame_count = 0
-            out.release()
-
-    elif person_count == 3:
-        if point == 0:
-            out, start = make_new_video(frame, pos_frames, person_count, out)
-            frame_count += 1
-            point += 1
-        elif point < frame_threshold:
-            if start != person_count:
-                point += 1            
-            out.write(frame)
-            frame_count += 1
-        else:
-            point = 0
-            frame_count = 0
-            out.release()
-    else:
-        person_count = 4
-        if point == 0:
-            out, start = make_new_video(frame, pos_frames, person_count, out)
-            frame_count += 1
-            point += 1
-        elif point < frame_threshold:
-            if start != person_count:
-                point += 1
-            out.write(frame)
-            frame_count += 1
-        else:
-            point = 0
-            frame_count = 0
-            out.release()
-    ''' 
-    print("out =", out)
-    print("point =", point)
-    print("person count = ", person_count)           
     return point, frame_count, out, start
 
 def make_new_video(frame, pos_frames, person_count, out):
